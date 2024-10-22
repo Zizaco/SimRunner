@@ -69,7 +69,7 @@ Optionnally, the config file may also specify:
 Look at the provided `sample.json` for a more or less complete example of what you can do.
 
 If you enable the HTTP interface in the config file, point your browser at http://(host):(port) to view a dynamic graph of throughput and latency.
-    
+
 For distributed metrics collection (aggregate results from multiple SimRunners, if you have a very intensive workload) take a look at https://github.com/schambon/SimRunner-Collector
 
 For easy setup in EC2, a quick and dirty script to provision a machine etc. is at https://github.com/schambon/launchSimRunner
@@ -95,6 +95,8 @@ Let's look at an example:
 ```
 {
     "connectionString": "$MONGO_URI",
+    "connectionLifeTime": 0,
+    "maxPoolSize": 100,
     "reportInterval": 1000,
     "http": {
         "enabled": false,
@@ -152,7 +154,7 @@ This config specifies a connection to a local MongoDB without authentication, a 
 A few things can be seen already:
 * templates are _named_ and referenced by name in the workloads.
 * workloads are also named. This is for collecting statistics.
-* templates are pretty flexible. You can use all normal EJSON expressions (like `{"$date": "2021-10-27T00:00:00Z"}`) as well as _generator expressions_ prefixed by `%`. Generator expressions allow you to randomly generate objectids, dates, and almost everything that is supported by [JavaFaker](https://github.com/DiUS/java-faker). 
+* templates are pretty flexible. You can use all normal EJSON expressions (like `{"$date": "2021-10-27T00:00:00Z"}`) as well as _generator expressions_ prefixed by `%`. Generator expressions allow you to randomly generate objectids, dates, and almost everything that is supported by [JavaFaker](https://github.com/DiUS/java-faker).
 * templates can `remember` fields it has generated, in order to create libraries of valid data. This is useful for generating workloads later on. When the system starts, the `remember`ed fields are pre-populated from the existing collection (if it exists) by default. See further down for advanced remember features.
 * templates can specify indexes (use normal MongoDB syntax) to create at startup.
 * workloads run independently in their own threads. They can also be multi-threaded, if you want to model specific parallelism condition. If omitted, `threads` defaults to 1.
@@ -361,7 +363,7 @@ Compounding is useful when you want to run complex queries and still ensure they
 ```
 {
     "name": "person",
-    "template": { 
+    "template": {
         "_id": "%objectid",
         "first": "%name.first",
         "last": "%name.last",
@@ -393,7 +395,7 @@ but it would pick a first name and a last name at random - most of the time yiel
 ```
 {
     "name": "person",
-    "template": { 
+    "template": {
         "_id": "%objectid",
         "first": "%name.first",
         "last": "%name.last",

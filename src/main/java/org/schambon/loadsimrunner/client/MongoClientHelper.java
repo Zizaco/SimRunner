@@ -5,6 +5,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import javax.imageio.stream.FileImageInputStream;
 
@@ -28,12 +29,12 @@ import com.mongodb.client.vault.ClientEncryption;
 import com.mongodb.client.vault.ClientEncryptions;
 
 /**
- * Get 
+ * Get
  */
 public class MongoClientHelper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MongoClientHelper.class);
-    
+
     public static void doInTemporaryClient(String uri, TaskWithClient task) {
 
         try (var client = MongoClients.create(uri)) {
@@ -46,14 +47,15 @@ public class MongoClientHelper {
         void run(MongoClient client);
     }
 
-    public static MongoClient client(String uri, Document encryption) {
-        
+    public static MongoClient client(String uri, Document encryption, int maxConnectionLifeTime, int maxPoolSize) {
+
         if (! isOn(encryption)) {
             return MongoClients.create(MongoClientSettings.builder()
                 .applyConnectionString(new ConnectionString(uri))
+                .applyToConnectionPoolSettings(builder -> builder.maxConnectionLifeTime(maxConnectionLifeTime, TimeUnit.SECONDS).maxSize(maxPoolSize))
                 .uuidRepresentation(UuidRepresentation.STANDARD)
                 .build());
-            
+
         } else {
             var cryptSharedLibPath = getOrEnv(encryption, "sharedlib");
             var extraOptions = new HashMap<String, Object>();
@@ -98,7 +100,7 @@ public class MongoClientHelper {
     private static void createEncryptedCollection(MongoClient encryptedClient, ClientEncryption clientEncryption,
             Document collDef) {
 
-                
+
         String database = collDef.getString("database");
         String collection = collDef.getString("collection");
         String kmsProvider = collDef.getString("kmsProvider");
@@ -176,7 +178,7 @@ public class MongoClientHelper {
         } catch(IOException ioe) {
             throw new RuntimeException("Cannot read encryption keyfile", ioe);
         }
- 
+
     }
 
     public static boolean isOn(Document config) {

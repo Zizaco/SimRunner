@@ -92,9 +92,9 @@ public class SimRunner {
             } catch (Exception e) {
                 LOGGER.error("Cannot start HTTP server", e);
             }
-           
+
         }
-        
+
         while(true) {
             LOGGER.debug("Reporter waking up");
             try {
@@ -116,18 +116,21 @@ public class SimRunner {
         try {
             connectionString = config.getString("connectionString");
 
-            if (connectionString == null) {                
+            if (connectionString == null) {
                 throw new InvalidConfigException("Connection String not present");
-            } 
+            }
 
         } catch (ClassCastException t) {
             throw new InvalidConfigException("Invalid Connection String");
         }
 
+        int connectionLifeTime = config.getInteger("connectionLifeTime", 0);
+        int maxPoolSize = config.getInteger("maxPoolSize", 100);
+
         // bit ugly: we have to drop collections before initialising the main MongoClient since it can create encrypted collections, which would error out if they already exist
         dropCollectionsIfNecessary(connectionString, (List<Document>) config.get("templates"));
 
-        this.client = MongoClientHelper.client(connectionString, (Document) config.get("encryption"));
+        this.client = MongoClientHelper.client(connectionString, (Document) config.get("encryption"), connectionLifeTime, maxPoolSize);
 
         Document commandResult = client.getDatabase("admin").runCommand(new Document("isMaster", 1));
         if (!commandResult.getBoolean("ismaster")) {
